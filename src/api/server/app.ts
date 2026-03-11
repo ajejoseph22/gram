@@ -23,6 +23,9 @@ app.use(rateLimiter);
 // Request logging
 app.use(requestLogger);
 
+// Static files
+app.use("/uploads", express.static(env.UPLOAD_DIR_ABSOLUTE));
+
 // Routes
 app.use("/health-check", healthCheckRouter);
 
