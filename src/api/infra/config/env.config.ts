@@ -3,11 +3,17 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { z } from "zod";
 
-const apiPackageRoot = fileURLToPath(new URL("../../../", import.meta.url));
+const configDirectory = path.dirname(fileURLToPath(import.meta.url));
+const apiRoot = path.resolve(configDirectory, "../../..");
 
-dotenv.config({ path: path.resolve(apiPackageRoot, ".env") });
+dotenv.config({ path: path.resolve(apiRoot, ".env") });
 
 const ensureLeadingSlash = (value: string) => (value.startsWith("/") ? value : `/${value}`);
+const normalizePublicPath = (value: string) => {
+	const withLeadingSlash = ensureLeadingSlash(value);
+	// strip trailing slash if value is not "/"
+	return withLeadingSlash === "/" ? withLeadingSlash : withLeadingSlash.replace(/\/+$/, "");
+};
 
 const databaseUrlSchema = z
 	.string()
@@ -36,7 +42,9 @@ export const apiEnvSchema = z.object({
 
 	// Uploads
 	UPLOAD_DIR: z.string().min(1).default("./uploads"),
+	UPLOAD_PUBLIC_PATH: z.string().min(1).transform(normalizePublicPath).default("/uploads"),
 	MAX_UPLOAD_SIZE_MB: z.coerce.number().positive().default(10),
+	MAX_UPLOAD_NUMBER: z.coerce.number().int().positive().default(5),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
@@ -57,7 +65,7 @@ const parsedEnv = parseApiEnv(process.env);
 export const env = {
 	...parsedEnv,
 	MAX_UPLOAD_SIZE_BYTES: Math.floor(parsedEnv.MAX_UPLOAD_SIZE_MB * 1024 * 1024),
-	UPLOAD_DIR_ABSOLUTE: path.resolve(apiPackageRoot, parsedEnv.UPLOAD_DIR),
+	UPLOAD_DIR_ABSOLUTE: path.resolve(apiRoot, parsedEnv.UPLOAD_DIR),
 	isDevelopment: parsedEnv.NODE_ENV === "development",
 	isProduction: parsedEnv.NODE_ENV === "production",
 	isTest: parsedEnv.NODE_ENV === "test",

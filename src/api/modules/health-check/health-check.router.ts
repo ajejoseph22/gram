@@ -10,6 +10,7 @@ healthCheckRegistry.registerPath({
 	method: "get",
 	path: "/health-check",
 	tags: ["Health Check"],
+	summary: "Check that the API service is healthy",
 	responses: {
 		[StatusCodes.OK]: {
 			description: "Success",

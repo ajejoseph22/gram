@@ -1,6 +1,7 @@
 import { env } from "src/api/infra/config/env.config";
 import { openAPIRouter } from "src/api/modules/api-docs/open-api.router";
 import { healthCheckRouter } from "src/api/modules/health-check/health-check.router";
+import { postRouter } from "@api/modules/post/post.router";
 import errorHandler from "src/api/server/middleware/error.middleware";
 import rateLimiter from "src/api/server/middleware/rate-limit.middleware";
 import requestLogger from "src/api/server/middleware/request-logger.middleware";
@@ -24,10 +25,11 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Static files
-app.use("/uploads", express.static(env.UPLOAD_DIR_ABSOLUTE));
+app.use(env.UPLOAD_PUBLIC_PATH, express.static(env.UPLOAD_DIR_ABSOLUTE));
 
 // Routes
 app.use("/health-check", healthCheckRouter);
+app.use("/post", postRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

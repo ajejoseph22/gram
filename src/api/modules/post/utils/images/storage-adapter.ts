@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { env } from "src/api/infra/config/env.config";
-import type { AllowedMimeType } from "./image-validator";
+import { env } from "@api/infra/config/env.config";
+import { AllowedMimeType } from "@api/modules/post/utils/images/image-validator";
 
 const MIME_TO_EXT: Record<AllowedMimeType, string> = {
 	"image/jpeg": ".jpg",
@@ -19,5 +19,5 @@ export async function writeFile(buffer: Buffer, mimeType: AllowedMimeType): Prom
 
 	await fs.writeFile(fullPath, buffer);
 
-	return filename;
+	return path.posix.join(env.UPLOAD_PUBLIC_PATH, filename);
 }
