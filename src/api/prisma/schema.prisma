@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Post {
+  id              String   @id @default(uuid()) @db.Uuid
+  title           String   @db.VarChar(120)
+  titleNormalized String   @map("title_normalized") @db.VarChar(120)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  postTags    PostTag[]
+  mediaAssets MediaAsset[]
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)], name: "idx_posts_feed_order")
+  @@map("posts")
+}
+
+model Tag {
+  id          Int    @id @default(autoincrement())
+  slug        String @unique @db.VarChar(24)
+  displayName String @map("display_name") @db.VarChar(24)
+
+  postTags PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId String @map("post_id") @db.Uuid
+  tagId  Int    @map("tag_id")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId, postId], name: "idx_post_tags_tag_lookup")
+  @@map("post_tags")
+}
+
+model MediaAsset {
+  id          String @id @default(uuid()) @db.Uuid
+  postId      String @map("post_id") @db.Uuid
+  position    Int
+  storagePath String @map("storage_path") @db.VarChar(512)
+  mimeType    String @map("mime_type") @db.VarChar(32)
+  width       Int
+  height      Int
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, position], name: "media_assets_post_id_position_key")
+  @@index([postId, position], name: "idx_media_assets_post_order")
+  @@map("media_assets")
+}

@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"baseUrl": ".",
+		"paths": {
+			"@api/*": ["./*"],
+			"src/api/*": ["./*"]
+		},
+		"moduleResolution": "Node",
+		"outDir": "dist",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"types": ["node", "vitest/globals"]
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["dist", "node_modules"]
+}

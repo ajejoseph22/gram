@@ -1,0 +1,21 @@
+{
+	"name": "gram",
+	"version": "0.1.0",
+	"license": "MIT",
+	"private": true,
+	"scripts": {
+		"dev:api": "pnpm --filter @gram/api dev",
+		"dev:web": "pnpm --filter @gram/web dev",
+		"dev": "pnpm run dev:api & pnpm run dev:web",
+		"build:api": "pnpm --filter @gram/api build",
+		"build:web": "pnpm --filter @gram/web build",
+		"build": "pnpm run build:api && pnpm run build:web",
+		"test": "pnpm --filter @gram/api test",
+		"test:cov": "pnpm --filter @gram/api test:cov",
+		"format": "pnpm exec biome check --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.1.4"
+	},
+	"packageManager": "pnpm@10.14.0"
+}
