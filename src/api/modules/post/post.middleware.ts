@@ -4,10 +4,28 @@ import multer from "multer";
 import { env } from "src/api/infra/config/env.config";
 import { postBodySchema } from "./validators/post.schema";
 
-export const parseUpload = multer({
+const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: { fileSize: env.MAX_UPLOAD_SIZE_BYTES },
 }).array("images", env.MAX_UPLOAD_NUMBER);
+
+export function parseUpload(req: Request, res: Response, next: NextFunction) {
+	upload(req, res, (err) => {
+		if (err instanceof multer.MulterError) {
+			res.status(StatusCodes.BAD_REQUEST).json({
+				error: { code: "UPLOAD_ERROR", message: `Upload error: ${err.message}` },
+			});
+			return;
+		}
+
+		if (err) {
+			next(err);
+			return;
+		}
+
+		next();
+	});
+}
 
 export function validatePost(req: Request, res: Response, next: NextFunction) {
 	if (!req.files || !(req.files as Express.Multer.File[]).length) {
