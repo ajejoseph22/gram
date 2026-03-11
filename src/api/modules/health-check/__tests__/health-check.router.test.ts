@@ -1,5 +1,5 @@
-import { app } from "src/api/server/app";
 import { StatusCodes } from "http-status-codes";
+import { app } from "src/api/server/app";
 import request from "supertest";
 
 describe("Health Check API endpoints", () => {

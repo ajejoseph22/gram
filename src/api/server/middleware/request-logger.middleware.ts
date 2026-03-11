@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { env } from "src/api/infra/config/env.config";
-import { logger } from "src/api/infra/logger/logger";
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import pinoHttp from "pino-http";
+import { env } from "src/api/infra/config/env.config";
+import { logger } from "src/api/infra/logger/logger";
 
 const getLogLevel = (status: number) => {
 	if (status >= StatusCodes.INTERNAL_SERVER_ERROR) return "error";

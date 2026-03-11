@@ -11,13 +11,17 @@ export const parseUpload = multer({
 
 export function validatePost(req: Request, res: Response, next: NextFunction) {
 	if (!req.files || !(req.files as Express.Multer.File[]).length) {
-		res.status(StatusCodes.BAD_REQUEST).json({ error: { code: "MISSING_IMAGE", message: "At least one image is required" } });
+		res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ error: { code: "MISSING_IMAGE", message: "At least one image is required" } });
 		return;
 	}
 
 	const parsed = postBodySchema.safeParse(req.body);
 	if (!parsed.success) {
-		res.status(StatusCodes.BAD_REQUEST).json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+		res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
 		return;
 	}
 

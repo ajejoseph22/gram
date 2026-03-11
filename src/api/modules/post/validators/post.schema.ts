@@ -14,11 +14,7 @@ export const postBodySchema = z.object({
 				.map(normalizeTag)
 				.filter((t) => t.length > 0),
 		)
-		.pipe(
-			z
-				.array(z.string().max(24, "Each tag must be 24 characters or fewer"))
-				.max(10, "Maximum 10 tags allowed"),
-		),
+		.pipe(z.array(z.string().max(24, "Each tag must be 24 characters or fewer")).max(10, "Maximum 10 tags allowed")),
 });
 
 export type PostBody = z.infer<typeof postBodySchema>;

@@ -1,8 +1,8 @@
+import { ImageValidationError } from "@api/modules/post/utils/images/image-validator";
 import type { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { ImageValidationError } from "@api/modules/post/utils/images/image-validator";
-import type { PostBody } from "./validators/post.schema";
 import { createPost as createPostServiceFn } from "./post.service";
+import type { PostBody } from "./validators/post.schema";
 
 export async function createPost(req: Request, res: Response) {
 	try {

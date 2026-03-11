@@ -13,7 +13,12 @@ async function processImage(buffer: Buffer) {
 	const { mimeType } = await validateImage(buffer);
 	const normalizedImage = await normalizeImage(buffer, mimeType);
 	const filePublicPath = await writeFile(normalizedImage.buffer, normalizedImage.mimeType);
-	return { filePublicPath, mimeType: normalizedImage.mimeType, width: normalizedImage.width, height: normalizedImage.height };
+	return {
+		filePublicPath,
+		mimeType: normalizedImage.mimeType,
+		width: normalizedImage.width,
+		height: normalizedImage.height,
+	};
 }
 
 export async function createPost({ title, tags, fileBuffers }: CreatePostInput) {

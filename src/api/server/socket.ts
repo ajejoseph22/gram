@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from "node:http";
+import { Server as SocketIOServer } from "socket.io";
 import { env } from "src/api/infra/config/env.config";
 import { logger } from "src/api/infra/logger/logger";
-import { Server as SocketIOServer } from "socket.io";
 
 let io: SocketIOServer | null = null;
 

@@ -1,4 +1,4 @@
-import {parseApiEnv} from "../env.config";
+import { parseApiEnv } from "../env.config";
 
 describe("parseApiEnv", () => {
 	it("should apply sensible defaults for local development", () => {

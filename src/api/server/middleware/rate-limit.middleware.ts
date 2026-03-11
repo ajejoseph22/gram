@@ -1,6 +1,6 @@
-import { env } from "src/api/infra/config/env.config";
 import type { Request } from "express";
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+import { env } from "src/api/infra/config/env.config";
 
 const rateLimiter = rateLimit({
 	legacyHeaders: true,

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { env } from "@api/infra/config/env.config";
-import { AllowedMimeType } from "@api/modules/post/utils/images/image-validator";
+import type { AllowedMimeType } from "@api/modules/post/utils/images/image-validator";
 
 const MIME_TO_EXT: Record<AllowedMimeType, string> = {
 	"image/jpeg": ".jpg",

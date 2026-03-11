@@ -1,5 +1,5 @@
-import { env } from "src/api/infra/config/env.config";
 import pino from "pino";
+import { env } from "src/api/infra/config/env.config";
 
 const prettyTransport = (): pino.TransportSingleOptions => ({
 	target: "pino-pretty",

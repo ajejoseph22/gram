@@ -43,11 +43,13 @@ postRegistry.registerPath({
 							title: z.string(),
 							createdAt: z.string().datetime(),
 							tags: z.array(z.string()),
-							images: z.array(z.object({
-								url: z.string(),
-								width: z.number(),
-								height: z.number(),
-							})),
+							images: z.array(
+								z.object({
+									url: z.string(),
+									width: z.number(),
+									height: z.number(),
+								}),
+							),
 						}),
 					}),
 				},

@@ -1,5 +1,5 @@
-import { fileTypeFromBuffer } from "file-type";
 import { env } from "@api/infra/config/env.config";
+import { fileTypeFromBuffer } from "file-type";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
