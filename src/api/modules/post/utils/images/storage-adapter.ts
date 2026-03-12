@@ -21,3 +21,13 @@ export async function writeFile(buffer: Buffer, mimeType: AllowedMimeType): Prom
 
 	return path.posix.join(env.UPLOAD_PUBLIC_PATH, filename);
 }
+
+export async function deleteTempFile(filePath?: string) {
+	if (!filePath) return;
+
+	try {
+		await fs.unlink(filePath);
+	} catch {
+		// No worries. Cron job will clean up files in the temp directory after a certain period
+	}
+}

@@ -9,7 +9,7 @@ export async function createPost(req: Request, res: Response) {
 		const { title, tags } = req.body as PostBody;
 		const files = req.files as Express.Multer.File[];
 
-		const result = await createPostServiceFn({ title, tags, fileBuffers: files.map((f) => f.buffer) });
+		const result = await createPostServiceFn({ title, tags, tmpFilePaths: files.map((f) => f.path) });
 
 		res.status(StatusCodes.CREATED).json({ data: result });
 	} catch (err) {

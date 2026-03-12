@@ -42,6 +42,7 @@ export const apiEnvSchema = z.object({
 
 	// Uploads
 	UPLOAD_DIR: z.string().min(1).default("./uploads"),
+	UPLOAD_TMP_DIR: z.string().min(1).default("./uploads-tmp"),
 	UPLOAD_PUBLIC_PATH: z.string().min(1).transform(normalizePublicPath).default("/uploads"),
 	MAX_UPLOAD_SIZE_MB: z.coerce.number().positive().default(10),
 	MAX_UPLOAD_NUMBER: z.coerce.number().int().positive().default(5),
@@ -66,6 +67,7 @@ export const env = {
 	...parsedEnv,
 	MAX_UPLOAD_SIZE_BYTES: Math.floor(parsedEnv.MAX_UPLOAD_SIZE_MB * 1024 * 1024),
 	UPLOAD_DIR_ABSOLUTE: path.resolve(apiRoot, parsedEnv.UPLOAD_DIR),
+	UPLOAD_TMP_DIR_ABSOLUTE: path.resolve(apiRoot, parsedEnv.UPLOAD_TMP_DIR),
 	isDevelopment: parsedEnv.NODE_ENV === "development",
 	isProduction: parsedEnv.NODE_ENV === "production",
 	isTest: parsedEnv.NODE_ENV === "test",
