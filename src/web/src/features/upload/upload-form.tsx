@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
-import { createPost } from "../../lib/post.api";
 import { env } from "../../lib/env";
+import { createPost } from "../../lib/post.api";
 
 const uploadSchema = z.object({
 	title: z.string().min(1, "Title is required").max(120),
