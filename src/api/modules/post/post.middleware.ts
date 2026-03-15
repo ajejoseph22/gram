@@ -5,7 +5,7 @@ import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import multer from "multer";
 import { env } from "src/api/infra/config/env.config";
-import { postBodySchema } from "./validators/post.schema";
+import { createPostBodySchema, getPostsQuerySchema } from "./validators/post.schema";
 
 mkdirSync(env.UPLOAD_TMP_DIR_ABSOLUTE, { recursive: true });
 
@@ -13,7 +13,7 @@ async function cleanupTemporaryFiles(files?: Express.Multer.File[]) {
 	await Promise.allSettled((files || []).map(async (file) => deleteTempFile(file.path)));
 }
 
-const upload = multer({
+const uploadHandler = multer({
 	storage: multer.diskStorage({
 		destination: env.UPLOAD_TMP_DIR_ABSOLUTE,
 		filename: (_req, _file, cb) => cb(null, randomUUID()),
@@ -21,47 +21,58 @@ const upload = multer({
 	limits: { fileSize: env.MAX_UPLOAD_SIZE_BYTES },
 }).array("images", env.MAX_UPLOAD_NUMBER);
 
-export function parseUpload(req: Request, res: Response, next: NextFunction) {
-	upload(req, res, (err) => {
+export function validateCreatePostRequest(req: Request, res: Response, next: NextFunction) {
+	uploadHandler(req, res, (err) => {
+		// Validate the file upload first
 		if (err) {
+			void cleanupTemporaryFiles(req.files as Express.Multer.File[] | undefined);
+
 			if (err instanceof multer.MulterError) {
-				cleanupTemporaryFiles(req.files as Express.Multer.File[] | undefined).finally(() => {
-					res.status(StatusCodes.BAD_REQUEST).json({
-						error: { code: "UPLOAD_ERROR", message: `Upload error: ${err.message}` },
-					});
+				res.status(StatusCodes.BAD_REQUEST).json({
+					error: { code: "UPLOAD_ERROR", message: `Upload error: ${err.message}` },
 				});
 				return;
 			}
 
-			cleanupTemporaryFiles(req.files as Express.Multer.File[] | undefined).finally(() => {
-				next(err);
-			});
+			// For unexpected errors, we pass them to the global error handler
+			next(err);
 			return;
 		}
 
+		const files = req.files as Express.Multer.File[] | undefined;
+
+		if (!files?.length) {
+			res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ error: { code: "MISSING_IMAGE", message: "At least one image is required" } });
+			return;
+		}
+
+		// Validate the rest of the body using Zod
+		const parsed = createPostBodySchema.safeParse(req.body);
+		if (!parsed.success) {
+			void cleanupTemporaryFiles(files);
+			res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+			return;
+		}
+
+		req.body = parsed.data;
 		next();
 	});
 }
 
-export async function validatePost(req: Request, res: Response, next: NextFunction) {
-	const files = req.files as Express.Multer.File[] | undefined;
+export function validateGetPostsRequest(req: Request, res: Response, next: NextFunction) {
+	const parsed = getPostsQuerySchema.safeParse(req.query);
 
-	if (!files?.length) {
-		res
-			.status(StatusCodes.BAD_REQUEST)
-			.json({ error: { code: "MISSING_IMAGE", message: "At least one image is required" } });
-		return;
-	}
-
-	const parsed = postBodySchema.safeParse(req.body);
 	if (!parsed.success) {
-		await cleanupTemporaryFiles(files);
 		res
 			.status(StatusCodes.BAD_REQUEST)
-			.json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+			.json({ error: { code: "INVALID_QUERY", message: parsed.error.issues[0].message } });
 		return;
 	}
 
-	req.body = parsed.data;
+	res.locals.getPostsQuery = parsed.data;
 	next();
 }

@@ -1,7 +1,7 @@
+import { z } from "@api/modules/api-docs/open-api.zod";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { StatusCodes } from "http-status-codes";
-import { z } from "zod";
 
 export const healthCheckRegistry = new OpenAPIRegistry();
 export const healthCheckRouter: Router = express.Router();

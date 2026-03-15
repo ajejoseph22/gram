@@ -1,4 +1,44 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "src/api/infra/db/client";
+
+export interface FeedCursor {
+	createdAt: Date;
+	id: string;
+}
+
+export async function getFeedPosts(limit: number, cursor?: FeedCursor) {
+	const where: Prisma.PostWhereInput = cursor
+		? {
+				OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }],
+			}
+		: {};
+
+	return prisma.post.findMany({
+		where,
+		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+		take: limit + 1, // take 1 extra to see if there are more
+		select: {
+			id: true,
+			title: true,
+			createdAt: true,
+			mediaAssets: {
+				orderBy: { position: "asc" },
+				select: {
+					storagePath: true,
+					width: true,
+					height: true,
+				},
+			},
+			postTags: {
+				select: {
+					tag: {
+						select: { slug: true },
+					},
+				},
+			},
+		},
+	});
+}
 
 interface ProcessedImage {
 	filePublicPath: string;

@@ -1,8 +1,9 @@
+import { z } from "@api/modules/api-docs/open-api.zod";
+import { getPostsQuerySchema } from "@api/modules/post/validators/post.schema";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
-import { z } from "zod";
-import { createPost } from "./post.controller";
-import { parseUpload, validatePost } from "./post.middleware";
+import { createPost, getPosts } from "./post.controller";
+import { validateCreatePostRequest, validateGetPostsRequest } from "./post.middleware";
 
 export const postRegistry = new OpenAPIRegistry();
 export const postRouter: Router = express.Router();
@@ -71,4 +72,42 @@ postRegistry.registerPath({
 	},
 });
 
-postRouter.post("/", parseUpload, validatePost, createPost);
+postRegistry.registerPath({
+	method: "get",
+	path: "/post",
+	tags: ["Posts"],
+	summary: "Get paginated feed of posts in reverse-chronological order",
+	request: {
+		query: getPostsQuerySchema,
+	},
+	responses: {
+		200: {
+			description: "Feed page",
+			content: {
+				"application/json": {
+					schema: z.object({
+						data: z.array(
+							z.object({
+								id: z.string().uuid(),
+								title: z.string(),
+								createdAt: z.string().datetime(),
+								tags: z.array(z.string()),
+								images: z.array(
+									z.object({
+										url: z.string(),
+										width: z.number(),
+										height: z.number(),
+									}),
+								),
+							}),
+						),
+						nextCursor: z.string().nullable(),
+					}),
+				},
+			},
+		},
+	},
+});
+
+postRouter.get("/", validateGetPostsRequest, getPosts);
+postRouter.post("/", validateCreatePostRequest, createPost);
