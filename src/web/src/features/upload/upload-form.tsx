@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
-import { createPost } from "../../lib/api";
+import { createPost } from "../../lib/post.api";
 import { env } from "../../lib/env";
 
 const uploadSchema = z.object({
