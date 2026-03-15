@@ -5,9 +5,9 @@ import { createPost as createPostServiceFn, getPosts as getPostsServiceFn } from
 import type { CreatePostBody, GetPostsQuery } from "./validators/post.schema";
 
 export async function getPosts(_req: Request, res: Response) {
-	const { cursor, limit } = res.locals.getPostsQuery as GetPostsQuery;
+	const { cursor, limit, tags } = res.locals.getPostsQuery as GetPostsQuery;
 
-	const result = await getPostsServiceFn(cursor, limit);
+	const result = await getPostsServiceFn(cursor, limit, tags);
 
 	res.status(StatusCodes.OK).json(result);
 }

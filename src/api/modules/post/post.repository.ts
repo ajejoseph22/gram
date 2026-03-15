@@ -6,12 +6,16 @@ export interface FeedCursor {
 	id: string;
 }
 
-export async function getFeedPosts(limit: number, cursor?: FeedCursor) {
-	const where: Prisma.PostWhereInput = cursor
-		? {
-				OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }],
-			}
-		: {};
+export async function getFeedPosts(limit: number, cursor?: FeedCursor, tags?: string[]) {
+	const where: Prisma.PostWhereInput = {};
+
+	if (cursor) {
+		where.OR = [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }];
+	}
+
+	if (tags?.length) {
+		where.postTags = { some: { tag: { slug: { in: tags } } } };
+	}
 
 	return prisma.post.findMany({
 		where,

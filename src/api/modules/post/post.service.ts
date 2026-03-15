@@ -23,9 +23,9 @@ function decodeCursor(cursor: string): FeedCursor {
 	return { createdAt, id };
 }
 
-export async function getPosts(cursor?: string, limit = 20) {
+export async function getPosts(cursor?: string, limit = 20, tags?: string[]) {
 	const feedCursor = cursor ? decodeCursor(cursor) : undefined;
-	const rows = await getFeedPosts(limit, feedCursor);
+	const rows = await getFeedPosts(limit, feedCursor, tags);
 
 	const hasMore = rows.length > limit;
 	const postsForPage = hasMore ? rows.slice(0, limit) : rows;

@@ -20,6 +20,17 @@ export const createPostBodySchema = z.object({
 export const getPostsQuerySchema = z.object({
 	cursor: z.string().optional(),
 	limit: z.coerce.number().int().min(1).max(50).default(20),
+	tags: z
+		.string()
+		.optional()
+		.transform((value) =>
+			value
+				? value
+						.split(",")
+						.map(normalizeTag)
+						.filter((t) => t.length)
+				: undefined,
+		),
 });
 
 export type GetPostsQuery = z.infer<typeof getPostsQuerySchema>;

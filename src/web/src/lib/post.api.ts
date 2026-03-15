@@ -19,9 +19,11 @@ export interface PostsResponse {
 	nextCursor: string | null;
 }
 
-export async function getPosts(cursor?: string): Promise<PostsResponse> {
+export async function getPosts(cursor?: string, tags?: string[]): Promise<PostsResponse> {
 	const params: Record<string, string> = {};
 	if (cursor) params.cursor = cursor;
+	if (tags?.length) params.tags = tags.join(",");
+
 	const { data } = await client.get<PostsResponse>("/post", { params });
 	return data;
 }
