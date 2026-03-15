@@ -2,6 +2,9 @@ import fs from "node:fs/promises";
 import { normalizeImage } from "@api/modules/post/utils/images/image-normalizer";
 import { validateImage } from "@api/modules/post/utils/images/image-validator";
 import { deleteTempFile, writeFile } from "@api/modules/post/utils/images/storage-adapter";
+import { getIO } from "@api/server/sockets";
+import { SocketEvent } from "@api/server/sockets/events";
+import { logger } from "src/api/infra/logger/logger";
 import { createPost as createPostInDB, type FeedCursor, getFeedPosts } from "./post.repository";
 
 const CURSOR_SEPARATOR = "_";
@@ -85,11 +88,19 @@ export async function createPost({ title, tags, tmpFilePaths }: CreatePostInput)
 
 	const post = await createPostInDB({ title, tags: dedupedTags, images: processedImages });
 
-	return {
+	const result = {
 		id: post.id,
 		title: post.title,
 		createdAt: post.createdAt,
 		tags: dedupedTags,
 		images: processedImages.map((img) => ({ url: img.filePublicPath, width: img.width, height: img.height })),
 	};
+
+	try {
+		getIO().emit(SocketEvent.POST_CREATED, result);
+	} catch (err) {
+		logger.error({ err }, "Failed to emit feed.post.created event");
+	}
+
+	return result;
 }

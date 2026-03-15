@@ -1,10 +1,9 @@
 import { createServer } from "node:http";
-
+import { createSocketServer } from "@api/server/sockets";
 import { env } from "src/api/infra/config/env.config";
 import { prisma } from "src/api/infra/db/client";
 import { logger } from "src/api/infra/logger/logger";
 import { app } from "src/api/server/app";
-import { createSocketServer } from "src/api/server/socket";
 
 async function main() {
 	await prisma.$connect();
