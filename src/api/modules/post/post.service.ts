@@ -5,26 +5,8 @@ import { deleteTempFile, writeFile } from "@api/modules/post/utils/images/storag
 import { getIO } from "@api/server/sockets";
 import { SocketEvent } from "@api/server/sockets/events";
 import { logger } from "src/api/infra/logger/logger";
-import { createPost as createPostInDB, type FeedCursor, getFeedPosts } from "./post.repository";
-
-const CURSOR_SEPARATOR = "_";
-
-function encodeCursor(createdAt: Date, id: string): string {
-	return Buffer.from(`${createdAt.toISOString()}${CURSOR_SEPARATOR}${id}`).toString("base64url");
-}
-
-function decodeCursor(cursor: string): FeedCursor {
-	const decoded = Buffer.from(cursor, "base64url").toString();
-	const separatorIndex = decoded.indexOf(CURSOR_SEPARATOR);
-	if (separatorIndex === -1) throw new Error("Invalid cursor");
-
-	const createdAt = new Date(decoded.slice(0, separatorIndex));
-	const id = decoded.slice(separatorIndex + 1);
-
-	if (Number.isNaN(createdAt.getTime()) || !id) throw new Error("Invalid cursor");
-
-	return { createdAt, id };
-}
+import { createPost as createPostInDB, getFeedPosts } from "./post.repository";
+import { decodeCursor, encodeCursor } from "./utils/cursor";
 
 export async function getPosts(cursor?: string, limit = 20, tags?: string[]) {
 	const feedCursor = cursor ? decodeCursor(cursor) : undefined;
