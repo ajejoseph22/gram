@@ -22,7 +22,7 @@ export function TagsInput({ value, onChange, placeholder = "#filter by tags", ..
 		onChange(value.filter((t) => t !== tag));
 	};
 
-	const handleKeyUp = (e: KeyboardEvent<HTMLInputElement>) => {
+	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
 		if ((e.key === "Enter" || e.key === " ") && input.trim()) {
 			e.preventDefault();
 			addTag(input);
@@ -41,7 +41,7 @@ export function TagsInput({ value, onChange, placeholder = "#filter by tags", ..
 					placeholder={value.length ? "" : placeholder}
 					value={input}
 					onChange={(e) => setInput(e.currentTarget.value)}
-					onKeyUp={handleKeyUp}
+					onKeyDown={handleKeyDown}
 				/>
 			</Pill.Group>
 		</PillsInput>
