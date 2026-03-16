@@ -20,9 +20,8 @@ model Post {
 }
 
 model Tag {
-  id          Int    @id @default(autoincrement())
-  slug        String @unique @db.VarChar(24)
-  displayName String @map("display_name") @db.VarChar(24)
+  id   Int    @id @default(autoincrement())
+  slug String @unique @db.VarChar(24)
 
   postTags PostTag[]
 

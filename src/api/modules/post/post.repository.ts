@@ -82,7 +82,7 @@ export async function createPost({ title, tags, images }: CreatePostData) {
 
 		if (tags.length) {
 			await tx.tag.createMany({
-				data: tags.map((slug) => ({ slug, displayName: slug })),
+				data: tags.map((slug) => ({ slug })),
 				skipDuplicates: true,
 			});
 
