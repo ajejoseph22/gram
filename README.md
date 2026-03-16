@@ -1,201 +1,220 @@
-# Fee Collection Service
+# Gram
 
-Fee consolidation engine for indexing `FeesCollected` events from LI.FI `FeeCollector` contracts and exposing them via REST.
+An anonymous image-sharing app with real-time updates.
 
-For architectural decisions, design trade-offs, and internals, see [documentation.md](./documentation.md).
+## Quick Jump
 
-## Table of Contents
 - [Architecture](#architecture)
-- [Feature Summary](#feature-summary)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Quick Setup](#quick-setup)
-- [Running the App](#running-the-app)
-- [Notes](#notes)
-- [Scripts](#scripts)
-- [API Docs](#api-docs)
-- [Next Steps](#next-steps)
+- [Getting Started](#getting-started)
+  - [With Docker](#with-docker)
+  - [Without Docker](#without-docker)
+- [API](#api)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Environment Variables](#environment-variables)
+- [Architectural Decisions & Next Steps](#architectural-decisions--next-steps)
+
+---
 
 ## Architecture
 
 ```mermaid
 graph LR
-    subgraph Blockchain
-        RPC[EVM RPC Node]
+    Browser["Browser\n(React SPA)"]
+
+    subgraph Backend
+        API["API Server\n(Express + Socket.IO)"]
+        DB[("PostgreSQL")]
+        FS[("File System\n(uploads/)")]
     end
 
-    subgraph Fee Collection Service
-        Worker[Sync Worker]
-        DB[(MongoDB)]
-        API[REST API]
-    end
-
-    Client[API Consumer]
-
-    RPC -- "FeesCollected events" --> Worker
-    Worker -- "store events + sync state" --> DB
-    API -- "query indexed events" --> DB
-    Client -- "GET /fees?integrator=0x..." --> API
+    Browser -- "REST (HTTP)" --> API
+    Browser <-- "WebSocket" --> API
+    API -- "read/write metadata" --> DB
+    API -- "read/write images" --> FS
+    API -- "serve static images" --> Browser
 ```
 
-The **worker** polls EVM chains via RPC for `FeesCollected` contract events, normalizes them, and stores them in MongoDB with idempotent upserts. The **API** serves those indexed events to consumers with cursor-based pagination.
+## Getting Started
 
-## Feature summary
-- Scans supported EVM chains (currently Polygon by default) for `FeesCollected` events.
-- Stores normalized events in MongoDB with idempotent writes.
-- Tracks chain sync state to avoid rescanning finalized blocks.
-- Exposes a `GET /fees` endpoint with pagination and filtering (by `integrator` and `chainId`).
+### Prerequisites
 
-## Tech Stack
-- Node.js + TypeScript
-- Express
-- Ethers v5
-- MongoDB + Typegoose
-- Zod + OpenAPI
-- Vitest + Supertest
+- **Node.js** >= 22 
+- **pnpm** >= 10
+- **PostgreSQL** >= 15 (optional, via Docker)
+- **Docker** + **Docker Compose** (recommended)
 
-## Prerequisites
-- Docker + Docker Compose
-- Node.js v22+ (optional, via Docker)
-- MongoDB (optional, via Docker)
+### With Docker
 
-## Quick Setup
-1. Clone the repo and navigate to the root directory:
 ```bash
-git clone https://github.com/ajejoseph22/fee-collector.git
+docker compose up --build
 ```
-2. Create env file and adjust values if needed:
+
+This will build and start three services: the API server, the React frontend, and a PostgreSQL database.
+
+Each service will be available on the following ports:
+
+| Service    | URL                   |
+|------------|-----------------------|
+| Frontend   | http://localhost:80   |
+| API server | http://localhost:8080 |
+| PostgreSQL | localhost:5432        |
+
+**Open `http://localhost:80` in your browser to access the app.**
+
+NB: Migrations run automatically before the API starts. Image uploads are persisted using Docker bind mounts.
+
+
+To stop the services, run:
 ```bash
-cp .env.template .env
-```
-2. Start the app
-```
-docker compose up
+docker compose down
 ```
 
-That's it!
+### Without Docker
 
-The worker will start syncing fees from Polygon by default, and there will be an endpoint available at `http://localhost:8080/fees` to query the indexed fees.
+**1. Start PostgreSQL**:
 
-You can customize worker chains by editing the `.env` file. Chains must be comma-separated **without spaces**:
-```dotenv
-WORKER_CHAINS="polygon,ethereum"
-```
-
-> **Note:** Only Polygon is actively supported. Ethereum is recognized as an extensibility POC but will be skipped with a warning. Unknown chains will cause the worker to exit with an error.
-
-## Running the app
-### Docker Compose (recommended)
-Start everything (MongoDB + API + worker):
 ```bash
-docker compose up
+brew services start postgresql@17
+# or just the Docker database:
+docker compose up db -d
 ```
 
-Start only Mongo:
+**2. Configure environment**:
+
 ```bash
-docker compose up -d mongo
+cp src/api/.env.example src/api/.env
+cp src/web/.env.example src/web/.env
 ```
 
-Start only API (will also start Mongo if not running):
+**3. Install dependencies**:
+
 ```bash
-docker compose up api
+cd src/api && pnpm install
+cd src/web && pnpm install
 ```
 
-Start only worker (will also start Mongo if not running):
+**4. Set up the database**:
+
 ```bash
-docker compose up worker
+cd src/api
+pnpm run db:generate
+pnpm run db:migrate
+pnpm run db:seed
 ```
 
-### Docker ad-hoc:
-First, start mongo if not running:
-```
-docker run -d --name mongo -p 27017:27017 mongo:8
-```
+**5. Start development**:
 
-API:
-```
-docker build -t fee-consolidation-service-api --target api .               
-docker run -p 8080:8080 --env-file .env -e MONGO_URI=mongodb://host.docker.internal:27017 fee-consolidation-service-api
-```
+```bash
+# From repo root (runs both FE abd API in parallel)
+pnpm dev
 
-Worker:
-```
-docker build -t fee-consolidation-service-worker --target worker .
-docker run --env-file .env -e MONGO_URI=mongodb://host.docker.internal:27017 fee-consolidation-service-worker
+# Or individually
+cd src/api && pnpm dev  
+cd src/web && pnpm dev 
 ```
 
-### Notes
-> **Scaling per chain (optional):** Instead of syncing all chains in one container, you can run a dedicated worker per chain for independent resource allocation, fault isolation, and restarts:
->  ```bash
->  docker run --env-file .env -e MONGO_URI=<some-mongo-url> fee-consolidation-service-worker --chain polygon
->  docker run --env-file .env -e MONGO_URI=<some-mongo-url> fee-consolidation-service-worker --chain ethereum # POC, currently not supported
-> ...
->  ```
+This will start the API server on `http://localhost:8080` and the React frontend on `http://localhost:3000`.
 
+## API
 
-> **MONGO_URI** is overridden in Docker compose to point to the `mongo` service automatically.
+An interactive Swagger UI is available at `http://localhost:8080`. Raw spec at `/swagger.json`.
 
+### `GET /health-check` - Health Check endpoint to verify the service is running.
 
-## Scripts
-- `pnpm run start:dev` — run API with file watcher (dev mode)
-- `pnpm run start:prod` — run compiled API without watcher
-- `pnpm run sync:fees` — run fee sync worker (continuous loop)
-- `pnpm run sync:fees -- --once` — run fee sync worker for a single cycle, then exit
-- `pnpm run build` — build TypeScript to JavaScript in `dist/`
-- `pnpm test` — run all tests
+**Response** `200`:
+```json
+{ "message": "Service is healthy" }
+```
 
+### `GET /post` — Paginated Feed
 
+**Query Parameters:**
 
-## API Docs
-Interactive Swagger documentation is available at [http://localhost:8080/](http://localhost:8080/) when the API is running.
+| Parameter | Type   | Required | Description                          |
+|-----------|--------|----------|--------------------------------------|
+| cursor    | string | no       | Pagination cursor from previous response |
+| limit     | number | no       | Page size, 1–50 (default 20)         |
+| tags      | string | no       | Comma-separated tag slugs to filter  |
 
-### `GET /fees`
-Query params:
-- `integrator` (required): EVM address.
-- `chainId` (optional): numeric chain id.
-- `limit` (optional): defaults to `50`, max `200`.
-- `cursor` (optional): opaque cursor returned by prior page.
-
-Success response:
+**Response** `200`:
 ```json
 {
   "data": [
     {
-      "chainId": 137,
-      "blockNumber": 78600000,
-      "blockHash": "0x...",
-      "txHash": "0x...",
-      "logIndex": 0,
-      "token": "0x...",
-      "integrator": "0x...",
-      "integratorFee": "100",
-      "lifiFee": "20",
-      "blockTimestamp": 1700000000
+      "id": "uuid",
+      "title": "My new post",
+      "createdAt": "2025-01-15T12:00:00.000Z",
+      "tags": ["viral", "funny"],
+      "images": [
+        { "url": "/uploads/abc123.jpg", "width": 1920, "height": 1080 }
+      ]
     }
   ],
-  "cursor": "..."
+  "nextCursor": "string | null"
 }
 ```
 
-Error response:
+### `POST /post` — Create Post
+
+Expects multipart form data (`multipart/form-data`).
+
+**Body Fields:**
+
+| Field  | Type   | Required | Description                                                        |
+|--------|--------|----------|--------------------------------------------------------------------|
+| title  | string | yes      | 1–120 characters                                                   |
+| tags   | string | no       | Comma-separated (max 10 tags, each tag has a max of 24 characters) |
+| images | file[] | yes      | 1–5 images, max 10 MB each. JPEG, PNG, or WebP formats accepted    |
+
+**Response** `201`:
 ```json
 {
-  "error": {
-    "code": "INVALID_REQUEST",
-    "message": "..."
+  "data": {
+    "id": "uuid",
+    "title": "Sunset at the beach",
+    "createdAt": "2025-01-15T12:00:00.000Z",
+    "tags": ["nature", "travel"],
+    "images": [
+      { "url": "/uploads/abc123.jpg", "width": 1920, "height": 1080 }
+    ]
   }
 }
 ```
 
-## Next Steps
+**Error responses** `400`:
 
-- **Distributed worker lock per chain**: Prevent multiple workers from processing the same chain concurrently.
-  - Add a per-chain lease lock in MongoDB with `ownerId` and `expiresAt`.
-  - Add heartbeat-based lease renewal while sync is running to avoid lock expiry during long cycles.
-  - Treat lock loss as a sync failure for that chain and surface non-zero exit in `--once` mode.
-  - Add lock-specific tests for acquire/release/renew, stale lock takeover, and multi-worker contention.
-- **Fees endpoint auth**: The `/fees` endpoint is currently unauthenticated. Ideally, add authentication (AuthN) and authorization (AuthZ).
-  - Enforce AuthZ so the authenticated integrator can only query events for its own `integrator` address.
-  - If `query.integrator` does not match the caller identity/claims, return `403 Forbidden`.
-  - Support privileged/admin scopes for cross-integrator reads.
-  - Add audit logging for authorization decisions and rejected access attempts.
+| Code           | Sample message                 |
+|----------------|--------------------------------|
+| INVALID_INPUT  | Title is required              |
+| MISSING_IMAGE  | At least one image is required |
+| INVALID_UPLOAD | Unsupported file type          |
+| UPLOAD_ERROR   | File too large                 |
+
+### WebSocket
+
+The Frontend connects via Socket.IO at `http://localhost:8080/socket.io`. The server emits a `post.created` event with the post object on every new upload. The Frontend listens for this event and updates the feed in real time.
+
+## Testing
+
+```bash
+cd src/api && pnpm test # API tests
+cd src/web && pnpm test # Frontend tests
+```
+
+## Project Structure
+
+```
+src/api/     # Express API (standalone pnpm project)
+src/web/     # React SPA (standalone pnpm project)
+```
+
+Each project (API and Web) has its own `package.json` and `pnpm-lock.yaml`. They communicate only over HTTP and WebSockets.
+
+## Environment Variables
+
+See `src/api/.env.example` and `src/web/.env.example` for all available variables with defaults.
+
+## Architectural Decisions & Next Steps
+
+For a deeper dive into the system design, technology choices, and planned improvements, see [architecture.md](./architecture.md).
