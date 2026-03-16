@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+.tmp-api-deploy
+uploads
+uploads-tmp
+.env
+.env.*
+*.md
+.git

@@ -1,6 +1,8 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
+import prismaClientPackage from "@prisma/client";
 import { env } from "../config/env.config";
+
+const { PrismaClient } = prismaClientPackage;
 
 export function createPrismaClient() {
 	const adapter = new PrismaPg({

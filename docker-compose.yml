@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gram
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    build:
+      context: src/api
+      target: migrate
+    env_file: src/api/.env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: src/api
+      target: runner
+    ports:
+      - "8080:8080"
+    env_file: src/api/.env.docker
+    volumes:
+      - ./uploads:/app/uploads
+      - ./uploads-tmp:/app/uploads-tmp
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: src/web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:8080}
+        VITE_SOCKET_PATH: ${VITE_SOCKET_PATH:-/socket.io}
+        VITE_MAX_UPLOAD_FILE_COUNT: ${VITE_MAX_UPLOAD_FILE_COUNT:-5}
+        VITE_MAX_UPLOAD_SIZE_MB: ${VITE_MAX_UPLOAD_SIZE_MB:-10}
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
