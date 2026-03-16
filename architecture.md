@@ -30,7 +30,7 @@ Uploaded files are validated by reading their binary signature with the `file-ty
 
 ### Image normalization at ingest
 
-Every upload passes through `Sharp` before storage: EXIF auto-rotation, resize to a 2048px ceiling, and format-preserving output.
+Every upload passes through [Sharp](https://www.npmjs.com/package/sharp) before storage: EXIF auto-rotation, resize to a 2048px ceiling, and format-preserving output.
 
 **Why it matters:** Mobile cameras embed orientation in EXIF metadata rather than rotating pixels, so without auto-rotation, images display sideways in browsers that ignore EXIF. The 2048px cap prevents a 20MP phone photo from becoming a 15MB payload on every feed scroll. Doing this once at ingest time means the stored file is always display-ready (no runtime processing cost on reads).
 
@@ -64,7 +64,7 @@ The API Dockerfile uses a straightforward multi-stage flow: `base`, `deps`, `bui
 
 ### Image upload queuing
 
-**The problem:** `Sharp` processing blocks the request thread. Under concurrent uploads, the event loop saturates and response times spike.
+**The problem:** [Sharp](https://www.npmjs.com/package/sharp) processing blocks the request thread. Under concurrent uploads, the event loop saturates and response times spike.
 
 **The approach:** The API would accept the upload, return `202 Accepted` with a job ID, and push image processing into a BullMQ worker backed by Redis. The worker processes images off the main event loop and emits `post.created` via Socket.IO when done. Workers scale independently of the API (we can run 5 workers behind one API instance during traffic spikes).
 
