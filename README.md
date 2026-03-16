@@ -146,6 +146,11 @@ An interactive Swagger UI is available at [http://localhost:8080](http://localho
 
 ### `GET /health-check` - Health Check endpoint to verify the service is running.
 
+**Sample request:**
+```bash
+curl http://localhost:8080/health-check
+```
+
 **Response** `200`:
 ```json
 { "message": "Service is healthy" }
@@ -160,6 +165,18 @@ An interactive Swagger UI is available at [http://localhost:8080](http://localho
 | cursor    | string | no       | Pagination cursor from previous response |
 | limit     | number | no       | Page size, 1–50 (default 20)         |
 | tags      | string | no       | Comma-separated tag slugs to filter  |
+
+**Sample requests:**
+```bash
+# Fetch first page (default 20 items)
+curl http://localhost:8080/post
+
+# Fetch 5 items filtered by tags
+curl "http://localhost:8080/post?limit=5&tags=nature,travel"
+
+# Fetch next page using cursor from previous response
+curl "http://localhost:8080/post?cursor=MjAyNS0wMS0xNVQxMjowMDowMC4wMDBaXzEyMzQ"
+```
 
 **Response** `200`:
 ```json
@@ -190,6 +207,15 @@ Expects multipart form data (`multipart/form-data`).
 | title  | string | yes      | 1–120 characters                                                   |
 | tags   | string | no       | Comma-separated (max 10 tags, each tag has a max of 24 characters) |
 | images | file[] | yes      | 1–5 images, max 10 MB each. JPEG, PNG, or WebP formats accepted    |
+
+**Sample request:**
+```bash
+curl -X POST http://localhost:8080/post \
+  -F "title=My first post" \
+  -F "tags=nature,travel" \
+  -F "images=@./photo1.jpg" \
+  -F "images=@./photo2.png"
+```
 
 **Response** `201`:
 ```json
