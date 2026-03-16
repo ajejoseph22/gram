@@ -3,10 +3,6 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
-	"files": [
-		"dist",
-		"prisma"
-	],
 	"packageManager": "pnpm@10.14.0",
 	"scripts": {
 		"dev": "node --import=tsx --watch index.ts",
@@ -47,7 +43,12 @@
 		"zod": "3.25.76"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["@prisma/engines", "esbuild", "prisma", "sharp"]
+		"onlyBuiltDependencies": [
+			"@prisma/engines",
+			"esbuild",
+			"prisma",
+			"sharp"
+		]
 	},
 	"devDependencies": {
 		"@types/cors": "2.8.19",
