@@ -1,8 +1,9 @@
 import { Carousel } from "@mantine/carousel";
-import { Badge, Button, Card, Container, Group, Image, Loader, Stack, Text, Title } from "@mantine/core";
+import { Badge, Button, Card, Container, Group, Image, Stack, Text, Title } from "@mantine/core";
 import { useHeadroom } from "@mantine/hooks";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Loader } from "../components/loader.tsx";
 import { TagsInput } from "../components/tags-input.tsx";
 import { getPosts, type Post } from "../lib/api/post.ts";
 import { env } from "../lib/env.ts";
@@ -161,11 +162,7 @@ const Feed = () => {
 				</Button>
 			)}
 
-			{isLoading && (
-				<Stack align="center" mt="xl">
-					<Loader />
-				</Stack>
-			)}
+			{isLoading && <Loader wrapperProps={{ mt: "xl" }} />}
 
 			{error && (
 				<Text c="red" ta="center" mt="xl">
@@ -227,11 +224,7 @@ const Feed = () => {
 					))}
 
 					<div ref={sentinelRef} />
-					{isLoadingMore && (
-						<Stack align="center" mt="md">
-							<Loader size="sm" />
-						</Stack>
-					)}
+					{isLoadingMore && <Loader size="sm" wrapperProps={{ mt: "md" }} />}
 				</Stack>
 			)}
 		</Container>
