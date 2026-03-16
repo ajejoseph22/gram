@@ -1,7 +1,7 @@
 import { Carousel } from "@mantine/carousel";
 import { Badge, Button, Card, Container, Group, Image, Loader, Stack, Text, Title } from "@mantine/core";
 import { useHeadroom } from "@mantine/hooks";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { TagsInput } from "../components/tags-input.tsx";
 import { getPosts, type Post } from "../lib/api/post.ts";
@@ -13,7 +13,7 @@ import { useFeedSocket } from "../sockets/use-feed-socket.ts";
 const Feed = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tagsParam = searchParams.get("tags");
-	const activeTags = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
+	const activeTags = useMemo(() => (tagsParam ? tagsParam.split(",").filter(Boolean) : []), [tagsParam]);
 
 	const [posts, setPosts] = useState<Post[]>([]);
 	const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -22,6 +22,7 @@ const Feed = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
 	const pinned = useHeadroom({ fixedAt: 120 });
+	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	const handleTagsChange = (tags: string[]) => {
 		if (tags.length) {
@@ -31,7 +32,7 @@ const Feed = () => {
 		}
 	};
 
-	const fetchPosts = async (cursor?: string, tags?: string[]) => {
+	const fetchPosts = useCallback(async (cursor?: string, tags?: string[]) => {
 		try {
 			if (cursor) {
 				setIsLoadingMore(true);
@@ -48,7 +49,7 @@ const Feed = () => {
 			setIsLoading(false);
 			setIsLoadingMore(false);
 		}
-	};
+	}, []);
 
 	// Live feed: buffer new posts from websocket
 	const onNewPost = useCallback(
@@ -62,7 +63,7 @@ const Feed = () => {
 				return [post, ...prev];
 			});
 		},
-		[tagsParam],
+		[activeTags],
 	);
 
 	const flushPendingPosts = () => {
@@ -91,7 +92,7 @@ const Feed = () => {
 		return () => {
 			socket.off("connect", onConnect);
 		};
-	}, [tagsParam]);
+	}, [activeTags, fetchPosts]);
 
 	useEffect(() => {
 		// clear posts and reset cursor when tags change
@@ -99,9 +100,26 @@ const Feed = () => {
 		setNextCursor(null);
 		setPendingPosts([]);
 
-		// fetch first page [with new tags]
 		fetchPosts(undefined, activeTags);
-	}, [tagsParam]);
+	}, [activeTags, fetchPosts]);
+
+	// Infinite scroll: observe sentinel element to trigger next page fetch
+	useEffect(() => {
+		const el = sentinelRef.current;
+		if (!el) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && nextCursor && !isLoadingMore) {
+					fetchPosts(nextCursor, activeTags);
+				}
+			},
+			{ rootMargin: "200px" },
+		);
+
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [nextCursor, isLoadingMore, activeTags, fetchPosts]);
 
 	return (
 		<Container size="sm" pt="xl" pb="xl">
@@ -126,7 +144,7 @@ const Feed = () => {
 				<TagsInput value={activeTags} onChange={handleTagsChange} />
 			</div>
 
-            {pendingPosts.length > 0 && (
+			{pendingPosts.length > 0 && (
 				<Button
 					onClick={flushPendingPosts}
 					color="blue"
@@ -208,12 +226,11 @@ const Feed = () => {
 						</Card>
 					))}
 
-					{nextCursor && (
-						<Group justify="center" mt="lg">
-							<Button variant="light" loading={isLoadingMore} onClick={() => fetchPosts(nextCursor, activeTags)}>
-								Load more
-							</Button>
-						</Group>
+					<div ref={sentinelRef} />
+					{isLoadingMore && (
+						<Stack align="center" mt="md">
+							<Loader size="sm" />
+						</Stack>
 					)}
 				</Stack>
 			)}

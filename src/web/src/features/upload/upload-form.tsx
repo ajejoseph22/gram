@@ -140,7 +140,7 @@ export function UploadForm() {
 
 				<TextInput placeholder="Title" {...register("title")} error={errors.title?.message} />
 
-				<TagsInput value={tags} onChange={setTags} placeholder="#add tags" />
+				<TagsInput value={tags} onChange={setTags} placeholder="Type a tag and press Space to add it" />
 
 				{submitError && (
 					<Text c="red" size="sm">
