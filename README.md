@@ -56,11 +56,11 @@ Each service will be available on the following ports:
 
 | Service    | URL                   |
 |------------|-----------------------|
-| Frontend   | http://localhost:80   |
-| API server | http://localhost:8080 |
+| Frontend   | [http://localhost:80](http://localhost:80)     |
+| API server | [http://localhost:8080](http://localhost:8080) |
 | PostgreSQL | localhost:5432        |
 
-**Open `http://localhost:80` in your browser to access the app.**
+**Open [http://localhost:80](http://localhost:80) in your browser to access the app.**
 
 NB: Migrations run automatically before the API starts. Image uploads are persisted using Docker bind mounts.
 
@@ -114,11 +114,11 @@ cd src/api && pnpm dev
 cd src/web && pnpm dev 
 ```
 
-This will start the API server on `http://localhost:8080` and the React frontend on `http://localhost:3000`.
+This will start the API server on [http://localhost:8080](http://localhost:8080) and the React frontend on [http://localhost:3000](http://localhost:3000).
 
 ## API
 
-An interactive Swagger UI is available at `http://localhost:8080`. Raw spec at `/swagger.json`.
+An interactive Swagger UI is available at [http://localhost:8080](http://localhost:8080). Raw spec at [`/swagger.json`](http://localhost:8080/swagger.json).
 
 ### `GET /health-check` - Health Check endpoint to verify the service is running.
 
@@ -193,7 +193,7 @@ Expects multipart form data (`multipart/form-data`).
 
 ### WebSocket
 
-The Frontend connects via Socket.IO at `http://localhost:8080/socket.io`. The server emits a `post.created` event with the post object on every new upload. The Frontend listens for this event and updates the feed in real time.
+The Frontend connects via Socket.IO at [http://localhost:8080/socket.io](http://localhost:8080/socket.io). The server emits a `post.created` event with the post object on every new upload. The Frontend listens for this event and updates the feed in real time.
 
 ## Testing
 
