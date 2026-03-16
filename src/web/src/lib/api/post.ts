@@ -1,4 +1,4 @@
-import { client } from "./api-client";
+import { client } from "./client.ts";
 
 export interface PostImage {
 	url: string;

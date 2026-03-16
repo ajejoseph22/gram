@@ -25,7 +25,14 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Static files
-app.use(env.UPLOAD_PUBLIC_PATH, express.static(env.UPLOAD_DIR_ABSOLUTE));
+app.use(
+	env.UPLOAD_PUBLIC_PATH,
+	(_req, res, next) => {
+		res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+		next();
+	},
+	express.static(env.UPLOAD_DIR_ABSOLUTE),
+);
 
 // Routes
 app.use("/health-check", healthCheckRouter);

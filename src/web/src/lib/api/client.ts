@@ -1,5 +1,5 @@
 import axios from "axios";
-import { env } from "./env";
+import { env } from "../env.ts";
 
 export const client = axios.create({
 	baseURL: env.VITE_API_BASE_URL,

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Post } from "../lib/post.api";
+import type { Post } from "../lib/api/post.ts";
 import { SocketEvent } from "./events.ts";
 import { getSocket } from "./socket";
 

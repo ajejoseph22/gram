@@ -7,8 +7,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { z } from "zod";
+import { TagsInput } from "../../components/tags-input.tsx";
+import { createPost } from "../../lib/api/post.ts";
 import { env } from "../../lib/env";
-import { createPost } from "../../lib/post.api";
 
 const uploadSchema = z.object({
 	title: z.string().min(1, "Title is required").max(120),
@@ -20,6 +21,7 @@ type UploadFormValues = z.infer<typeof uploadSchema>;
 export function UploadForm() {
 	const navigate = useNavigate();
 	const [files, setFiles] = useState<File[]>([]);
+	const [tags, setTags] = useState<string[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [fileWarning, setFileWarning] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function UploadForm() {
 		const formData = new FormData();
 
 		formData.set("title", values.title.trim());
-		if (values.tags) formData.set("tags", values.tags.trim());
+		if (tags.length) formData.set("tags", tags.join(","));
 
 		for (const file of files) {
 			formData.append("images", file);
@@ -63,6 +65,7 @@ export function UploadForm() {
 			await createPost(formData);
 			resetForm();
 			setFiles([]);
+			setTags([]);
 			notifications.show({ title: "Posted!", message: "Your post has been sent!", color: "green" });
 			navigate("/feed");
 		} catch (err) {
@@ -137,7 +140,7 @@ export function UploadForm() {
 
 				<TextInput placeholder="Title" {...register("title")} error={errors.title?.message} />
 
-				<TextInput placeholder="Tags (comma-separated)" {...register("tags")} />
+				<TagsInput value={tags} onChange={setTags} placeholder="#add tags" />
 
 				{submitError && (
 					<Text c="red" size="sm">

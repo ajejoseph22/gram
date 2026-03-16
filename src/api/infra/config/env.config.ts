@@ -30,7 +30,7 @@ export const apiEnvSchema = z.object({
 	SOCKET_PATH: z.string().min(1).transform(ensureLeadingSlash).default("/socket.io"),
 
 	// Rate Limiter
-	RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
+	RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(1000),
 	RATE_LIMIT_WINDOW_MS: z.coerce
 		.number()
 		.int()
