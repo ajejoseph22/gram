@@ -1,5 +1,6 @@
 import { Carousel } from "@mantine/carousel";
 import { Badge, Button, Card, Container, Group, Image, Loader, Stack, Text, Title } from "@mantine/core";
+import { useHeadroom } from "@mantine/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { TagsInput } from "../components/tags-input.tsx";
@@ -19,6 +20,8 @@ const Feed = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isLoadingMore, setIsLoadingMore] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
+	const pinned = useHeadroom({ fixedAt: 120 });
 
 	const handleTagsChange = (tags: string[]) => {
 		if (tags.length) {
@@ -47,21 +50,30 @@ const Feed = () => {
 		}
 	};
 
-	// Live feed: prepend new posts from websocket
+	// Live feed: buffer new posts from websocket
 	const onNewPost = useCallback(
 		(post: Post) => {
 			// Skip if it doesn't match the active tag filter
 			if (activeTags.length && !post.tags.some((t) => activeTags.includes(t))) {
 				return;
 			}
-			// Prepend and deduplicate by id
-			setPosts((prev) => {
+			setPendingPosts((prev) => {
 				if (prev.some((p) => p.id === post.id)) return prev;
 				return [post, ...prev];
 			});
 		},
 		[tagsParam],
 	);
+
+	const flushPendingPosts = () => {
+		setPosts((prev) => {
+			const existingIds = new Set(prev.map((p) => p.id));
+			const newPosts = pendingPosts.filter((p) => !existingIds.has(p.id));
+			return [...newPosts, ...prev];
+		});
+		setPendingPosts([]);
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
 
 	useFeedSocket(onNewPost);
 
@@ -85,6 +97,7 @@ const Feed = () => {
 		// clear posts and reset cursor when tags change
 		setPosts([]);
 		setNextCursor(null);
+		setPendingPosts([]);
 
 		// fetch first page [with new tags]
 		fetchPosts(undefined, activeTags);
@@ -99,7 +112,36 @@ const Feed = () => {
 				</Button>
 			</Group>
 
-			<TagsInput value={activeTags} onChange={handleTagsChange} mb="md" />
+			<div
+				style={{
+					position: "sticky",
+					top: 2,
+					zIndex: 100,
+					backgroundColor: "var(--mantine-color-body)",
+					paddingBottom: "var(--mantine-spacing-md)",
+					transform: pinned ? "translateY(0)" : "translateY(-100%)",
+					transition: "transform 0.3s ease",
+				}}
+			>
+				<TagsInput value={activeTags} onChange={handleTagsChange} />
+			</div>
+
+            {pendingPosts.length > 0 && (
+				<Button
+					onClick={flushPendingPosts}
+					color="blue"
+					radius="xl"
+					style={{
+						position: "fixed",
+						top: 16,
+						left: "50%",
+						transform: "translateX(-50%)",
+						zIndex: 1000,
+					}}
+				>
+					{pendingPosts.length} new {pendingPosts.length === 1 ? "post" : "posts"}
+				</Button>
+			)}
 
 			{isLoading && (
 				<Stack align="center" mt="xl">
