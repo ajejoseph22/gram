@@ -2,8 +2,15 @@
 
 An anonymous image-sharing app with real-time updates.
 
+## Stack
+- Express + TypeScript
+- PostgreSQL
+- Socket.IO
+- React + Vite
+
 ## Quick Jump
 
+- [Feature Overview](#feature-overview)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
   - [With Docker](#with-docker)
@@ -15,6 +22,18 @@ An anonymous image-sharing app with real-time updates.
 - [Architectural Decisions & Next Steps](#architectural-decisions--next-steps)
 
 ---
+
+## Feature Overview
+
+- Anonymous posts with title and tags. Up to 5 images per post
+- Real-time feed updates via WebSockets
+- Infinite scroll with cursor-based pagination 
+- Tag-based filtering via URL params
+- Image normalization at upload — EXIF auto-rotation and 2048px resize cap
+- Magic-byte file validation to prevent disguised uploads (not extension-based)
+- IP-based rate limiting — crucial for an anonymous application
+- Structured JSON logging with per-request correlation IDs
+- Dockerized deployment with multi-stage builds and Docker Compose orchestration
 
 ## Architecture
 
@@ -44,10 +63,10 @@ graph LR
 - **PostgreSQL** >= 15 (optional, via Docker)
 - **Docker** + **Docker Compose** (recommended)
 
-### With Docker
+### With Docker (recommended)
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
 This will build and start three services: the API server, the React frontend, and a PostgreSQL database.
@@ -62,7 +81,12 @@ Each service will be available on the following ports:
 
 **Open [http://localhost:80](http://localhost:80) in your browser to access the app.**
 
-NB: Migrations run automatically before the API starts. Image uploads are persisted using Docker bind mounts.
+NB: Migrations run automatically before the API starts. Image uploads are persisted to local file system using Docker bind mounts.
+
+(Optional) To seed the database with sample posts and images, run:
+```bash
+docker compose exec api pnpm run db:seed
+```
 
 
 To stop the services, run:

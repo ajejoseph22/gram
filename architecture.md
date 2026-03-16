@@ -20,7 +20,7 @@ Gram is a three-tier anonymous image-sharing app. A React SPA calls an Express A
 
 The feed uses keyset pagination on a compound `(created_at DESC, id DESC)` index. The cursor is a `base64url(timestamp + "_" + uuid)` token that the client passes back opaquely.
 
-**Why it matters:** Offset pagination breaks under concurrent writes — inserting a post shifts every subsequent page by one, causing duplicates or missed items. Keyset pagination is immune to this because the cursor anchors to a specific row, not a position. The compound key guarantees stable ordering even when posts share the same timestamp.
+**Why it matters:** Offset pagination breaks under concurrent writes — inserting a post shifts every subsequent page by one, causing duplicates or missed items. Cursor pagination is immune to this because the cursor anchors to a specific row, not a position. The compound key guarantees stable ordering even when posts share the same timestamp.
 
 ### Magic-byte file validation over extension checks
 
@@ -30,7 +30,7 @@ Uploaded files are validated by reading their binary signature with the `file-ty
 
 ### Image normalization at ingest
 
-Every upload passes through Sharp before storage: EXIF auto-rotation, resize to a 2048px ceiling, and format-preserving output. No on-the-fly transforms, no derivative generation.
+Every upload passes through `Sharp` before storage: EXIF auto-rotation, resize to a 2048px ceiling, and format-preserving output.
 
 **Why it matters:** Mobile cameras embed orientation in EXIF metadata rather than rotating pixels, so without auto-rotation, images display sideways in browsers that ignore EXIF. The 2048px cap prevents a 20MP phone photo from becoming a 15MB payload on every feed scroll. Doing this once at ingest time means the stored file is always display-ready (no runtime processing cost on reads).
 
@@ -38,13 +38,13 @@ Every upload passes through Sharp before storage: EXIF auto-rotation, resize to 
 
 WebSocket events don't inject directly into the feed. They accumulate in a `pendingPosts` buffer, and a floating "N new posts" button lets the user flush them in.
 
-**Why it matters:** Directly prepending posts causes layout shifts — images push content down mid-scroll, which is disorienting. The buffer pattern (used by Twitter/X) preserves scroll position while still signaling freshness. On socket reconnect, the first page is refetched to catch any events missed during disconnection.
+**Why it matters:** Directly prepending posts causes layout shifts — images push content down mid-scroll, which is bad UX. The buffer pattern (also used by Twitter/X) preserves the scroll position while still signaling freshness. On socket reconnect, the first page is refetched to catch any events missed during disconnection.
 
 ### Zod as the single schema language
 
 Zod schemas drive request validation, OpenAPI spec generation (via `zod-to-openapi`), environment config parsing, and frontend form validation. One schema definition produces runtime checks, type inference, and API documentation.
 
-**Why it matters:** Schema duplication is a common source of drift — the OpenAPI doc says one thing, the validator enforces another, and the TypeScript types assume a third. A single source of truth eliminates that entire class of bugs. Adding a field to a Zod schema automatically updates the validation, the types, and the Swagger docs.
+**Why it matters:** Schema duplication is a common source of drift (the OpenAPI doc says one thing, the validator enforces another, and the TypeScript types assume yet another). A single source of truth eliminates that entire class of bugs. Adding a field to a Zod schema automatically updates the validation, the types, and the Swagger docs.
 
 ### Feature-first module structure
 
@@ -56,7 +56,7 @@ Code is organized by domain (`modules/post/`, `modules/health-check/`) rather th
 
 The API Dockerfile uses a straightforward multi-stage flow: `base`, `deps`, `build`, `prod-deps`, `migrate`, and `runner`. The API runtime stays on `node:22-slim`, the migrate target reuses the full dependency install so the Prisma CLI is available there, and the final API image copies only the built `dist/` output plus pruned production dependencies. The web Dockerfile produces a static Vite build served by `nginx:alpine`.
 
-**Why it matters:** This keeps the Docker setup easy to debug and easy to reason about. Prisma client generation happens during the build, not in the final API container, so the API package can keep `prisma` as a dev dependency. The final API image is larger than an aggressively optimized distroless variant, but the build is much simpler and the runtime contract is clearer.
+**Why it matters:** This keeps the images lean and the Docker setup, easy to debug and reason about.
 
 ---
 
